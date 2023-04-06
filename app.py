@@ -1,10 +1,15 @@
 from dash import Dash, html, dcc, callback, Output, Input
+import dash
 import plotly.express as px
 import pandas as pd
 
 df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminder_unfiltered.csv')
 
-app = Dash(__name__)
+app = dash.Dash(
+    __name__,
+    suppress_callback_exceptions=True
+)
+server = app.server  # Expose server variable for Procfile
 
 app.layout = html.Div([
     html.H1(children='Title of Dash App', style={'textAlign':'center'}),
