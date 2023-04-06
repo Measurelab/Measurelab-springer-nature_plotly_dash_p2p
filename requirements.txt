@@ -17,6 +17,7 @@ google-resumable-media==2.4.1
 googleapis-common-protos==1.59.0
 grpcio==1.53.0
 grpcio-status==1.53.0
+gunicorn==20.1.0
 idna==3.4
 importlib-metadata==6.1.0
 itsdangerous==2.1.2
