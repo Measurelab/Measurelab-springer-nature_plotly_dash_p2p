@@ -5,13 +5,24 @@ import pandas as pd
 from google.cloud import bigquery
 from google.oauth2 import service_account
 import db_dtypes
-
-
-credentials = service_account.Credentials.from_service_account_file(
-    'snprojectd4a01e34-0cb888d91a40.json')
+import os
 
 project_id = 'snprojectd4a01e34'
-client = bigquery.Client(credentials=credentials, project=project_id)
+
+if os.getenv("DEPLOYMENT_ENVIRONMENT", "").startswith("staging"):
+    # Code is running in the staging environment
+    print("GCP hosted: staging")
+elif os.getenv("DEPLOYMENT_ENVIRONMENT", "").startswith("production"):
+    # Code is running in the production environment
+    print("GCP hosted: production")
+else:
+    # Local execution
+    print("locally hosted")
+    key_path = "snprojectd4a01e34-0cb888d91a40.json"
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = key_path
+
+
+client = bigquery.Client(project=project_id)
 df = client.query(
     '''SELECT * FROM snprojectd4a01e34.measurelab_path_to_publish_dashboard.measurelab_aje_submissions_dashboard_permanent''').to_dataframe()
 
