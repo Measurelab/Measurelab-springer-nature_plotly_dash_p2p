@@ -104,7 +104,7 @@ df['versions_submitted'].nunique()
 df['word_count'].mean()
 
 # AJE - Monthly Column Chart - Unique Users by created_at_year_month
-# TODO: Is rbm being used in the app?
+# TODO: This rbm code should be applied to the dff variable in the update_bar_chart callback
 rbm = df.groupby('created_at_year_month')['user_identity'].nunique(
 ).reset_index().sort_values('created_at_year_month')
 
@@ -140,6 +140,7 @@ app.layout = html.Div([
 )
 def update_bar_chart(value):
     dff = df[df.created_at_year_month == value]
+    # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
     fig_1 = px.bar(dff, x='created_at_year_month', y='user_identity', text_auto=True, barmode="group", labels={'created_at_year_month': 'Year Month', 'user_identity': 'Unique Users'}, template='plotly_white'
                    ).update_traces(marker=dict(color='#192c55'))
     return fig_1
