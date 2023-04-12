@@ -26,6 +26,7 @@ scopes = (
     "https://www.googleapis.com/auth/drive",
 )
 
+# Fetch BigQuery data
 bigquery.Client.SCOPE += scopes
 
 client = bigquery.Client(project=project_id)
@@ -89,7 +90,11 @@ ON m.institution_name_match_format = lk.institution_match
 
 # `snprojectd4a01e34.measurelab_path_to_publish_dashboard.measurelab_kk_institution_lookup`
 
+# Dashboard component dataframes/values
+# TODO: Store each scorecard's calculated value in a variable so they can be referenced when returning to the scorecard component
+# TODO: Once each dashboard component is defined in the app layout with an ID, these dataframe operations should be moved to the app callbacks
 
+# AJE - Main Scorecards - Unique Users - the unique count of 'user_identity'
 df['user_identity'].nunique()
 
 # AJE - Main Scorecards - Versions Submitted - the unique count of versions_submitted (field name in the main ds 'file_name')
@@ -97,20 +102,36 @@ df['versions_submitted'].nunique()
 
 # AJE - Main Scorecards - Average Word Count - the average/mean of 'word_count'
 df['word_count'].mean()
+
+# AJE - Monthly Column Chart - Unique Users by created_at_year_month
+# TODO: Is rbm being used in the app?
 rbm = df.groupby('created_at_year_month')['user_identity'].nunique(
 ).reset_index().sort_values('created_at_year_month')
 
+# TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
+
+# TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study - Use plotly express bar
+
+# TODO: AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study - Use plotly graph objects Table
+
+# Define app
 app = dash.Dash(
     __name__,
     suppress_callback_exceptions=True
 )
 server = app.server  # Expose server variable for Procfile
 
+# APP LAYOUT
+# TODO: Create a function that returns a scorecard component that can be rendered in the app's layout
+# TODO: Add Data Picker component - Use DatePickerRange from dcc?
 app.layout = html.Div([
     html.H1(children='AJE Visualisation', style={'textAlign': 'center'}),
-    dcc.Dropdown(options=df['created_at_year_month'], value = df['created_at_year_month'][0], id='dropdown-selection',clearable=False),
+    dcc.Dropdown(options=df['created_at_year_month'], value=df['created_at_year_month']
+                 [0], id='dropdown-selection', clearable=False),
     dcc.Graph(id='graph-content')
 ])
+
+# APP CALLBACKS
 
 
 @callback(
