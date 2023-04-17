@@ -112,7 +112,6 @@ fig1_plot = px.bar(fig_1, x='created_at_year_month', y='user_identity', text_aut
                    ).update_traces(marker=dict(color='#192c55'))
 fig1_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
-fig1_plot.show()
 
 # TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
 y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
@@ -147,10 +146,8 @@ fig_2.add_trace(
     )
 )
 
-fig_2.show()
 
-
-# TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study - Use plotly express bar
+# TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study
 fig_3 = df.groupby('grandparent_area_of_study')['versions_submitted'].nunique(
 ).reset_index().sort_values('versions_submitted', ascending=False)
 fig3_plot = px.bar(fig_3, x='grandparent_area_of_study', y='versions_submitted', text_auto=True,
@@ -158,9 +155,8 @@ fig3_plot = px.bar(fig_3, x='grandparent_area_of_study', y='versions_submitted',
                    ).update_traces(marker=dict(color='#192c55'))
 fig3_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
-fig3_plot.show()
 
-# TODO: AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study - Use plotly graph objects Table
+# AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study
 new_table = df.rename(columns={'grandparent_area_of_study': 'Departments'})
 df = new_table.groupby('Departments').agg(Submissions=(
     'versions_submitted', 'nunique')).sort_values(by=['Submissions'], ascending=False)
@@ -170,7 +166,6 @@ df2 = df.groupby('Departments')['Submissions'].nunique(
 ).reset_index().sort_values('Submissions', ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
     df2.columns)), cells=dict(values=[df2.Departments, df2.Submissions]))])
-print(fig4_table.show())
 
 # Define app
 app = dash.Dash(
@@ -218,18 +213,7 @@ app.layout = html.Div(children=[
         )])
 ])
 # APP CALLBACKS
-
-
-# @callback(
-#     Output('graph-content', 'figure'),
-#     Input('dropdown-selection', 'value')
-# )
-# def update_bar_chart(value):
-#     dff = df[df.created_at_year_month == value]
-#     # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
-#     fig_1 = px.bar(dff, x='created_at_year_month', y='user_identity', text_auto=True, barmode="group", labels={'created_at_year_month': 'Year Month', 'user_identity': 'Unique Users'}, template='plotly_white'
-#                    ).update_traces(marker=dict(color='#192c55'))
-#     return fig_1
+# TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
 
 
 if __name__ == '__main__':
