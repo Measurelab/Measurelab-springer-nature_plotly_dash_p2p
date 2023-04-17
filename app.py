@@ -1,8 +1,10 @@
 from dash import Dash, html, dcc, callback, Output, Input
 import dash
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
+import dash_bootstrap_components as dbc
 from google.cloud import bigquery
 from google.oauth2 import service_account
 import db_dtypes
@@ -86,10 +88,6 @@ LEFT JOIN lookup_key lk
 ON m.institution_name_match_format = lk.institution_match
 ''').to_dataframe()
 
-#  `snprojectd4a01e34.measurelab_path_to_publish_plotly_dash.aje_institutions_translated` t
-
-# `snprojectd4a01e34.measurelab_path_to_publish_dashboard.measurelab_kk_institution_lookup`
-
 # Dashboard component dataframes/values
 # TODO: Store each scorecard's calculated value in a variable so they can be referenced when returning to the scorecard component
 # TODO: Once each dashboard component is defined in the app layout with an ID, these dataframe operations should be moved to the app callbacks
@@ -105,14 +103,74 @@ df['word_count'].mean()
 
 # AJE - Monthly Column Chart - Unique Users by created_at_year_month
 # TODO: This rbm code should be applied to the dff variable in the update_bar_chart callback
-rbm = df.groupby('created_at_year_month')['user_identity'].nunique(
+fig_1 = df.groupby('created_at_year_month')['user_identity'].nunique(
 ).reset_index().sort_values('created_at_year_month')
+fig_1 = df.groupby('created_at_year_month')['user_identity'].nunique(
+).reset_index().sort_values('created_at_year_month')
+fig1_plot = px.bar(fig_1, x='created_at_year_month', y='user_identity', text_auto=True,
+                   labels={'created_at_year_month': 'Year Month', 'user_identity': 'Unique Users'}, template='plotly_white'
+                   ).update_traces(marker=dict(color='#192c55'))
+fig1_plot.update_traces(textfont_size=12, textangle=0,
+                        textposition="outside", cliponaxis=False)
+fig1_plot.show()
 
 # TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
+y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
+).reset_index().sort_values('created_at_year_month')
+y2 = df.groupby('created_at_year_month')['versions_submitted'].nunique(
+).reset_index().sort_values('created_at_year_month')
+layout = dict(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+fig_2 = go.Figure(layout=layout)
+fig_2.add_trace(
+    go.Bar(
+        x=y1['created_at_year_month'],
+        y=y1['user_identity'],
+        name="Unique Users",
+        text=y1['user_identity'],
+        textposition="auto",
+        marker=dict(color='#192c55'),
+
+    )
+
+)
+fig_2.add_trace(
+    go.Scatter(
+        x=y2['created_at_year_month'],
+        y=y2['versions_submitted'],
+        name="Versions Submitted",
+        mode='lines+markers+text',
+        marker={'size': 9},
+        line=dict(color='#057266', width=3),
+        text=y2['versions_submitted'],
+        textposition="top center"
+
+    )
+)
+
+fig_2.show()
+
 
 # TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study - Use plotly express bar
+fig_3 = df.groupby('grandparent_area_of_study')['versions_submitted'].nunique(
+).reset_index().sort_values('versions_submitted', ascending=False)
+fig3_plot = px.bar(fig_3, x='grandparent_area_of_study', y='versions_submitted', text_auto=True,
+                   labels={'grandparent_area_of_study': 'School', 'versions_submitted': 'Versions Submitted'}, template='plotly_white'
+                   ).update_traces(marker=dict(color='#192c55'))
+fig3_plot.update_traces(textfont_size=12, textangle=0,
+                        textposition="outside", cliponaxis=False)
+fig3_plot.show()
 
 # TODO: AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study - Use plotly graph objects Table
+new_table = df.rename(columns={'grandparent_area_of_study': 'Departments'})
+df = new_table.groupby('Departments').agg(Submissions=(
+    'versions_submitted', 'nunique')).sort_values(by=['Submissions'], ascending=False)
+df = df.rename(columns={
+               'grandparent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
+df2 = df.groupby('Departments')['Submissions'].nunique(
+).reset_index().sort_values('Submissions', ascending=False)
+fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
+    df2.columns)), cells=dict(values=[df2.Departments, df2.Submissions]))])
+print(fig4_table.show())
 
 # Define app
 app = dash.Dash(
@@ -124,26 +182,54 @@ server = app.server  # Expose server variable for Procfile
 # APP LAYOUT
 # TODO: Create a function that returns a scorecard component that can be rendered in the app's layout
 # TODO: Add Data Picker component - Use DatePickerRange from dcc?
-app.layout = html.Div([
-    html.H1(children='AJE Visualisation', style={'textAlign': 'center'}),
-    dcc.Dropdown(options=df['created_at_year_month'], value=df['created_at_year_month']
-                 [0], id='dropdown-selection', clearable=False),
-    dcc.Graph(id='graph-content')
+app.layout = html.Div(children=[
+    # All elements from the top of the page
+    html.Div([
+        html.H1(children="AJE"),
+        dbc.Row([
+            html.H2(
+                children='''AJE - Monthly Column Chart - Unique Users by created_at_year_month'''),
+            dcc.Graph(
+                id='fig-1',
+                figure=fig1_plot
+            ),
+        ])
+    ]),
+    html.Br(),
+    dbc.Row([
+        html.H2(children='''AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month'''),
+        dcc.Graph(
+            id='fig-2',
+            figure=fig_2
+        )]),
+    html.Br(),
+    dbc.Row([
+        html.H2(children='''AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study'''),
+        dcc.Graph(
+            id='fig-3',
+            figure=fig3_plot
+        )]),
+    html.Br(),
+    dbc.Row([
+        html.H2(children='''AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study'''),
+        dcc.Graph(
+            id='fig-4',
+            figure=fig4_table
+        )])
 ])
-
 # APP CALLBACKS
 
 
-@callback(
-    Output('graph-content', 'figure'),
-    Input('dropdown-selection', 'value')
-)
-def update_bar_chart(value):
-    dff = df[df.created_at_year_month == value]
-    # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
-    fig_1 = px.bar(dff, x='created_at_year_month', y='user_identity', text_auto=True, barmode="group", labels={'created_at_year_month': 'Year Month', 'user_identity': 'Unique Users'}, template='plotly_white'
-                   ).update_traces(marker=dict(color='#192c55'))
-    return fig_1
+# @callback(
+#     Output('graph-content', 'figure'),
+#     Input('dropdown-selection', 'value')
+# )
+# def update_bar_chart(value):
+#     dff = df[df.created_at_year_month == value]
+#     # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
+#     fig_1 = px.bar(dff, x='created_at_year_month', y='user_identity', text_auto=True, barmode="group", labels={'created_at_year_month': 'Year Month', 'user_identity': 'Unique Users'}, template='plotly_white'
+#                    ).update_traces(marker=dict(color='#192c55'))
+#     return fig_1
 
 
 if __name__ == '__main__':
