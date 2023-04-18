@@ -157,15 +157,10 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study
-new_table = df.rename(columns={'grandparent_area_of_study': 'Departments'})
-df = new_table.groupby('Departments').agg(Submissions=(
-    'versions_submitted', 'nunique')).sort_values(by=['Submissions'], ascending=False)
-df = df.rename(columns={
-               'grandparent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
-df2 = df.groupby('Departments')['Submissions'].nunique(
-).reset_index().sort_values('Submissions', ascending=False)
+df = df.rename(columns={'grandparent_area_of_study':'Departments','versions_submitted':'Submissions'})
+df = df.groupby('Departments')['Submissions'].nunique().reset_index().sort_values('Submissions',ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
-    df2.columns)), cells=dict(values=[df2.Departments, df2.Submissions]))])
+    df.columns)), cells=dict(values=[df.Departments, df.Submissions]))])
 
 # Define app
 app = dash.Dash(
