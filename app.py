@@ -93,13 +93,13 @@ ON m.institution_name_match_format = lk.institution_match
 # TODO: Once each dashboard component is defined in the app layout with an ID, these dataframe operations should be moved to the app callbacks
 
 # AJE - Main Scorecards - Unique Users - the unique count of 'user_identity'
-df['user_identity'].nunique()
+score_card_1 = df['user_identity'].nunique()
 
 # AJE - Main Scorecards - Versions Submitted - the unique count of versions_submitted (field name in the main ds 'file_name')
-df['versions_submitted'].nunique()
+score_card_2 = df['versions_submitted'].nunique()
 
 # AJE - Main Scorecards - Average Word Count - the average/mean of 'word_count'
-df['word_count'].mean()
+score_card_3 = df['word_count'].mean().astype(int)
 
 # AJE - Monthly Column Chart - Unique Users by created_at_year_month
 # TODO: This rbm code should be applied to the dff variable in the update_bar_chart callback
@@ -157,10 +157,28 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study
-df = df.rename(columns={'grandparent_area_of_study':'Departments','versions_submitted':'Submissions'})
-df = df.groupby('Departments')['Submissions'].nunique().reset_index().sort_values('Submissions',ascending=False)
+
+# Institution filter
+# df = df[df['md5_contract'] == 'ZgAikV0XuC67t2d7KOog']
+
+df_4 = df.rename(columns={
+               'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
+df_4 = df_4.groupby('Departments')['Submissions'].nunique(
+).reset_index().sort_values('Submissions', ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
-    df.columns)), cells=dict(values=[df.Departments, df.Submissions]))])
+    df_4.columns)), cells=dict(values=[df_4.Departments, df_4.Submissions]))])
+
+def generateScorecard(title, value, id, style={}):
+    return html.Div(
+        children=[
+            html.P(children=title, style={
+                "textAlign": "center", "margin": "14px", "fontSize": "16px"}),
+            html.P(
+                id=id, children=value, style={
+                    "textAlign": "center", "fontSize": "16px"}
+            )
+        ]
+    )
 
 # Define app
 app = dash.Dash(
@@ -176,6 +194,33 @@ app.layout = html.Div(children=[
     # All elements from the top of the page
     html.Div([
         html.H1(children="AJE"),
+        dbc.Row([
+            html.Div(
+                id="scorecard-container",
+                style={
+                    "display": "flex",
+                    "justifyContent": "space-evenly",
+                },
+                children=[
+                    generateScorecard(
+                        "Unique Users",
+                        score_card_1,
+                        "summary-unique-users",
+                    ),
+                    generateScorecard(
+                        "Versions Submitted",
+                        score_card_2,
+                        "summary-versions-submitted",
+                    ),
+                    generateScorecard(
+                        "Average Word Count",
+                        score_card_3,
+                        "summary-average-Word-count",
+                    ),
+
+                ]
+            )
+        ]),
         dbc.Row([
             html.H2(
                 children='''AJE - Monthly Column Chart - Unique Users by created_at_year_month'''),
@@ -207,6 +252,7 @@ app.layout = html.Div(children=[
             figure=fig4_table
         )])
 ])
+
 # APP CALLBACKS
 # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
 
