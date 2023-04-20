@@ -157,6 +157,10 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study
+
+# Institution filter
+# df = df[df['md5_contract'] == 'ZgAikV0XuC67t2d7KOog']
+
 df_4 = df.rename(columns={
                'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
 df_4 = df_4.groupby('Departments')['Submissions'].nunique(
