@@ -99,7 +99,7 @@ score_card_1 = df['user_identity'].nunique()
 score_card_2 = df['versions_submitted'].nunique()
 
 # AJE - Main Scorecards - Average Word Count - the average/mean of 'word_count'
-score_card_3 = df['word_count'].mean()
+score_card_3 = df['word_count'].mean().astype(int)
 
 # AJE - Monthly Column Chart - Unique Users by created_at_year_month
 # TODO: This rbm code should be applied to the dff variable in the update_bar_chart callback
@@ -157,12 +157,12 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # AJE - Top Subject Areas by Submissions - Departments Table - the unique count of versions_submitted (file_name) by parent_area_of_study
-df = df.rename(columns={
-               'grandparent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
-df = df.groupby('Departments')['Submissions'].nunique(
+df_4 = df.rename(columns={
+               'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
+df_4 = df_4.groupby('Departments')['Submissions'].nunique(
 ).reset_index().sort_values('Submissions', ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
-    df.columns)), cells=dict(values=[df.Departments, df.Submissions]))])
+    df_4.columns)), cells=dict(values=[df_4.Departments, df_4.Submissions]))])
 
 def generateScorecard(title, value, id, style={}):
     return html.Div(
@@ -199,7 +199,7 @@ app.layout = html.Div(children=[
                 },
                 children=[
                     generateScorecard(
-                        " Unique Users",
+                        "Unique Users",
                         score_card_1,
                         "summary-unique-users",
                     ),
