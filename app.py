@@ -115,37 +115,40 @@ fig1_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
-y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
-).reset_index().sort_values('created_at_year_month')
-y2 = df.groupby('created_at_year_month')['versions_submitted'].nunique(
-).reset_index().sort_values('created_at_year_month')
-layout = dict(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-fig_2 = go.Figure(layout=layout)
-fig_2.add_trace(
-    go.Bar(
-        x=y1['created_at_year_month'],
-        y=y1['user_identity'],
-        name="Unique Users",
-        text=y1['user_identity'],
-        textposition="auto",
-        marker=dict(color='#192c55'),
+
+def create_second_fig(df):
+    y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
+    ).reset_index().sort_values('created_at_year_month')
+    y2 = df.groupby('created_at_year_month')['versions_submitted'].nunique(
+    ).reset_index().sort_values('created_at_year_month')
+    layout = dict(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+    fig_2 = go.Figure(layout=layout)
+    fig_2.add_trace(
+        go.Bar(
+            x=y1['created_at_year_month'],
+            y=y1['user_identity'],
+            name="Unique Users",
+            text=y1['user_identity'],
+            textposition="auto",
+            marker=dict(color='#192c55'),
+
+        )
 
     )
+    fig_2.add_trace(
+        go.Scatter(
+            x=y2['created_at_year_month'],
+            y=y2['versions_submitted'],
+            name="Versions Submitted",
+            mode='lines+markers+text',
+            marker={'size': 9},
+            line=dict(color='#057266', width=3),
+            text=y2['versions_submitted'],
+            textposition="top center"
 
-)
-fig_2.add_trace(
-    go.Scatter(
-        x=y2['created_at_year_month'],
-        y=y2['versions_submitted'],
-        name="Versions Submitted",
-        mode='lines+markers+text',
-        marker={'size': 9},
-        line=dict(color='#057266', width=3),
-        text=y2['versions_submitted'],
-        textposition="top center"
-
+        )
     )
-)
+    return fig_2
 
 
 # TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study
@@ -249,7 +252,7 @@ app.layout = html.Div(children=[
         html.Div(id='output-container-date-picker-range'),
         dcc.Graph(
             id='fig-2',
-            figure=fig_2
+            figure={}
 
         )]),
     html.Br(),
@@ -273,63 +276,17 @@ app.layout = html.Div(children=[
 
 
 @app.callback(
-    Output('fig_2', 'figure'),
+    Output('fig-2', 'figure'),
     [Input("date-picker-range", "start_date"),
      Input("date-picker-range", "end_date")]
 
 )
 def update_output(start_date, end_date):
     filtered_data = df.query(
-        "created_at_year_month >= @start_date and created_at_year_month <= @end_date")
-    fig_2 = { 
-        'df':
-            {
-                "x": "x",
-                "y": "y"
-            }
-    }
+    "created_at_year_month >= @start_date and created_at_year_month <= @end_date")
+    fig_2 =  create_second_fig(filtered_data)
     return fig_2
 
-# def update_output(start_date, end_date):
-#     if not start_date or not end_date:
-#         raise dash.exceptions.PreventUpdate
-#     else:
-#         return fig_2(
-#             # df.loc[
-#             #     df["created_at_year_month"].between(
-#             #         pd.to_datetime(start_date), pd.to_datetime(end_date)
-#             #     )
 
-#             # ],
-#             new_results = df.loc[start_date: end_date],
-#             x="created_at_year_month",
-#             y="y"
-#         )
-
-
-# def update_table(start_date, end_date):
-#     new_results = df.loc[start_date: end_date]
-#     return new_results
-
-
-# def update_output(start_date, end_date):
-#     string_prefix = 'You have selected: '
-#     if start_date is not None:
-#         start_date_object = date.fromisoformat(start_date)
-#         start_date_string = start_date_object.strftime('%B %d, %Y')
-#         string_prefix = string_prefix + 'Start Date: ' + start_date_string + ' | '
-#     if end_date is not None:
-#         end_date_object = date.fromisoformat(end_date)
-#         end_date_string = end_date_object.strftime('%B %d, %Y')
-#         string_prefix = string_prefix + 'End Date: ' + end_date_string
-#     if len(string_prefix) == len('You have selected: '):
-#         return 'Select a date to see it displayed here'
-#     else:
-#         return string_prefix
-
-# def update_output(start_date, end_date):
-#   df2 = df.loc[start_date: end_date]
-#   columns =[{"name": i, "id": i} for i in df2.columns]
-#   return columns
 if __name__ == '__main__':
     app.run_server(host="localhost", port="8080", debug=True)
