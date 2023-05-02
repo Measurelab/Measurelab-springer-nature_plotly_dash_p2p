@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from datetime import date
 import dash
 import plotly.express as px
 import plotly.graph_objects as go
@@ -162,11 +163,12 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
 # df = df[df['md5_contract'] == 'ZgAikV0XuC67t2d7KOog']
 
 df_4 = df.rename(columns={
-               'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
+    'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
 df_4 = df_4.groupby('Departments')['Submissions'].nunique(
 ).reset_index().sort_values('Submissions', ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
     df_4.columns)), cells=dict(values=[df_4.Departments, df_4.Submissions]))])
+
 
 def generateScorecard(title, value, id, style={}):
     return html.Div(
@@ -179,6 +181,7 @@ def generateScorecard(title, value, id, style={}):
             )
         ]
     )
+
 
 # Define app
 app = dash.Dash(
@@ -215,7 +218,7 @@ app.layout = html.Div(children=[
                     generateScorecard(
                         "Average Word Count",
                         score_card_3,
-                        "summary-average-Word-count",
+                        "summary-average-word-count",
                     ),
 
                 ]
@@ -233,9 +236,21 @@ app.layout = html.Div(children=[
     html.Br(),
     dbc.Row([
         html.H2(children='''AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month'''),
+        dcc.DatePickerRange(
+            id='date-picker-range',
+            start_date=df["created_at_year_month"].min(),
+            end_date=df["created_at_year_month"].max(),
+            min_date_allowed=df["created_at_year_month"].min(),
+            max_date_allowed=df["created_at_year_month"].max(),
+            persistence=True,
+            persisted_props=["start_date"],
+            persistence_type="session"
+        ),
+        html.Div(id='output-container-date-picker-range'),
         dcc.Graph(
             id='fig-2',
             figure=fig_2
+
         )]),
     html.Br(),
     dbc.Row([
@@ -257,5 +272,64 @@ app.layout = html.Div(children=[
 # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
 
 
+@app.callback(
+    Output('fig_2', 'figure'),
+    [Input("date-picker-range", "start_date"),
+     Input("date-picker-range", "end_date")]
+
+)
+def update_output(start_date, end_date):
+    filtered_data = df.query(
+        "created_at_year_month >= @start_date and created_at_year_month <= @end_date")
+    fig_2 = { 
+        'df':
+            {
+                "x": "x",
+                "y": "y"
+            }
+    }
+    return fig_2
+
+# def update_output(start_date, end_date):
+#     if not start_date or not end_date:
+#         raise dash.exceptions.PreventUpdate
+#     else:
+#         return fig_2(
+#             # df.loc[
+#             #     df["created_at_year_month"].between(
+#             #         pd.to_datetime(start_date), pd.to_datetime(end_date)
+#             #     )
+
+#             # ],
+#             new_results = df.loc[start_date: end_date],
+#             x="created_at_year_month",
+#             y="y"
+#         )
+
+
+# def update_table(start_date, end_date):
+#     new_results = df.loc[start_date: end_date]
+#     return new_results
+
+
+# def update_output(start_date, end_date):
+#     string_prefix = 'You have selected: '
+#     if start_date is not None:
+#         start_date_object = date.fromisoformat(start_date)
+#         start_date_string = start_date_object.strftime('%B %d, %Y')
+#         string_prefix = string_prefix + 'Start Date: ' + start_date_string + ' | '
+#     if end_date is not None:
+#         end_date_object = date.fromisoformat(end_date)
+#         end_date_string = end_date_object.strftime('%B %d, %Y')
+#         string_prefix = string_prefix + 'End Date: ' + end_date_string
+#     if len(string_prefix) == len('You have selected: '):
+#         return 'Select a date to see it displayed here'
+#     else:
+#         return string_prefix
+
+# def update_output(start_date, end_date):
+#   df2 = df.loc[start_date: end_date]
+#   columns =[{"name": i, "id": i} for i in df2.columns]
+#   return columns
 if __name__ == '__main__':
     app.run_server(host="localhost", port="8080", debug=True)
