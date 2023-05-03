@@ -1,4 +1,5 @@
 from dash import Dash, html, dcc, callback, Output, Input
+from datetime import date
 import dash
 import plotly.express as px
 import plotly.graph_objects as go
@@ -114,37 +115,40 @@ fig1_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
 # TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
-y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
-).reset_index().sort_values('created_at_year_month')
-y2 = df.groupby('created_at_year_month')['versions_submitted'].nunique(
-).reset_index().sort_values('created_at_year_month')
-layout = dict(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
-fig_2 = go.Figure(layout=layout)
-fig_2.add_trace(
-    go.Bar(
-        x=y1['created_at_year_month'],
-        y=y1['user_identity'],
-        name="Unique Users",
-        text=y1['user_identity'],
-        textposition="auto",
-        marker=dict(color='#192c55'),
+
+def create_second_fig(df):
+    y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
+    ).reset_index().sort_values('created_at_year_month')
+    y2 = df.groupby('created_at_year_month')['versions_submitted'].nunique(
+    ).reset_index().sort_values('created_at_year_month')
+    layout = dict(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)')
+    fig_2 = go.Figure(layout=layout)
+    fig_2.add_trace(
+        go.Bar(
+            x=y1['created_at_year_month'],
+            y=y1['user_identity'],
+            name="Unique Users",
+            text=y1['user_identity'],
+            textposition="auto",
+            marker=dict(color='#192c55'),
+
+        )
 
     )
+    fig_2.add_trace(
+        go.Scatter(
+            x=y2['created_at_year_month'],
+            y=y2['versions_submitted'],
+            name="Versions Submitted",
+            mode='lines+markers+text',
+            marker={'size': 9},
+            line=dict(color='#057266', width=3),
+            text=y2['versions_submitted'],
+            textposition="top center"
 
-)
-fig_2.add_trace(
-    go.Scatter(
-        x=y2['created_at_year_month'],
-        y=y2['versions_submitted'],
-        name="Versions Submitted",
-        mode='lines+markers+text',
-        marker={'size': 9},
-        line=dict(color='#057266', width=3),
-        text=y2['versions_submitted'],
-        textposition="top center"
-
+        )
     )
-)
+    return fig_2
 
 
 # TODO: AJE - Top Subject Areas by Submissions - Schools Bar Chart - the unique count of versions_submitted (file_name) by grandparent_area_of_study
@@ -162,11 +166,12 @@ fig3_plot.update_traces(textfont_size=12, textangle=0,
 # df = df[df['md5_contract'] == 'ZgAikV0XuC67t2d7KOog']
 
 df_4 = df.rename(columns={
-               'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
+    'parent_area_of_study': 'Departments', 'versions_submitted': 'Submissions'})
 df_4 = df_4.groupby('Departments')['Submissions'].nunique(
 ).reset_index().sort_values('Submissions', ascending=False)
 fig4_table = go.Figure(data=[go.Table(header=dict(values=list(
     df_4.columns)), cells=dict(values=[df_4.Departments, df_4.Submissions]))])
+
 
 def generateScorecard(title, value, id, style={}):
     return html.Div(
@@ -179,6 +184,7 @@ def generateScorecard(title, value, id, style={}):
             )
         ]
     )
+
 
 # Define app
 app = dash.Dash(
@@ -215,7 +221,7 @@ app.layout = html.Div(children=[
                     generateScorecard(
                         "Average Word Count",
                         score_card_3,
-                        "summary-average-Word-count",
+                        "summary-average-word-count",
                     ),
 
                 ]
@@ -233,9 +239,21 @@ app.layout = html.Div(children=[
     html.Br(),
     dbc.Row([
         html.H2(children='''AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month'''),
+        dcc.DatePickerRange(
+            id='date-picker-range',
+            start_date=df["created_at_year_month"].min(),
+            end_date=df["created_at_year_month"].max(),
+            min_date_allowed=df["created_at_year_month"].min(),
+            max_date_allowed=df["created_at_year_month"].max(),
+            persistence=True,
+            persisted_props=["start_date"],
+            persistence_type="session"
+        ),
+        html.Div(id='output-container-date-picker-range'),
         dcc.Graph(
             id='fig-2',
-            figure=fig_2
+            figure={}
+
         )]),
     html.Br(),
     dbc.Row([
@@ -255,6 +273,19 @@ app.layout = html.Div(children=[
 
 # APP CALLBACKS
 # TODO: The code that is stored in the rbm variable (defined above) should be applied to dff here
+
+
+@app.callback(
+    Output('fig-2', 'figure'),
+    [Input("date-picker-range", "start_date"),
+     Input("date-picker-range", "end_date")]
+
+)
+def update_output(start_date, end_date):
+    filtered_data = df.query(
+    "created_at_year_month >= @start_date and created_at_year_month <= @end_date")
+    fig_2 =  create_second_fig(filtered_data)
+    return fig_2
 
 
 if __name__ == '__main__':
