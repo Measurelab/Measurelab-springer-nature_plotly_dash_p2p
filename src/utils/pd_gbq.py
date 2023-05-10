@@ -1,16 +1,13 @@
-from app import *
-from dash import Dash, html, dcc, callback, Output, Input
 from datetime import date
-import dash
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 import numpy as np
-import dash_bootstrap_components as dbc
 from google.cloud import bigquery
 from google.oauth2 import service_account
 import db_dtypes
 import os
+
 
 
 
@@ -92,10 +89,6 @@ LEFT JOIN lookup_key lk
 ON m.institution_name_match_format = lk.institution_match
 ''').to_dataframe()
 
-# Dashboard component dataframes/values
-# TODO: Store each scorecard's calculated value in a variable so they can be referenced when returning to the scorecard component
-# TODO: Once each dashboard component is defined in the app layout with an ID, these dataframe operations should be moved to the app callbacks
-
 # AJE - Main Scorecards - Unique Users - the unique count of 'user_identity'
 score_card_1 = df['user_identity'].nunique()
 
@@ -117,7 +110,7 @@ fig1_plot = px.bar(fig_1, x='created_at_year_month', y='user_identity', text_aut
 fig1_plot.update_traces(textfont_size=12, textangle=0,
                         textposition="outside", cliponaxis=False)
 
-# TODO: AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
+# AJE - Monthly Combo Chart - Unique Users & Versions Submitted by created_at_year_month - Use plotly graph objects Figure
 
 def create_second_fig(df):
     y1 = df.groupby('created_at_year_month')['user_identity'].nunique(
